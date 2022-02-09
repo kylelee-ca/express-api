@@ -13,7 +13,7 @@ const items = [
     {id:3, name: 'item3'},
 ];
 
-// Handlers for GET REQUESTS
+// Handlers for GET REQUESTS (Read)
 app.get('/', (req,res) => {
     res.send('This is the root of the website.');
 });
@@ -32,15 +32,13 @@ app.get('/api/items/:id', (req,res) => {
 
 });
 
-// Handlers for POST REQUEST
+// Handler for POST REQUEST (Create)
 
 app.post('/api/items', (req,res) => {
-    const schema = {
-        name: Joi.string().min(3).required(),
-    };
-    const result = Joi.validate(req.body, schema);
-    if(result.error) {
-        res.status(400).send(result.error.details[0].message);
+ 
+    const { error } = validateItem(req.body);
+    if(error) {
+        res.status(400).send(error.details[0].message);
         return ;
     }
 
@@ -53,8 +51,29 @@ app.post('/api/items', (req,res) => {
     res.send(item);
 });
 
+// Handler for PUT REQUEST (Update)
+app.put('/api/items/:id', (req, res) => {
+    const item = items.find(item => parseInt(req.params.id) ===  item.id);
+    if (!item) res.status(404).send('The item with the given ID was not found');
+
+    const { error } = validateItem(req.body);
+    if(error) {
+        res.status(400).send(error.details[0].message);
+        return ;
+    }
+    item.name = req.body.name;
+    res.send(item);
+})
 
 const port = process.env.PORT || 3000;
 app.listen(3000, ()=> {
     console.log(`Listening on port ${port}`)
 })
+
+//input validation function
+const validateItem = item => {
+    const schema = {
+        name: Joi.string().min(3).required(),
+    };
+    return Joi.validate(item, schema);
+}
