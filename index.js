@@ -23,10 +23,12 @@ app.get('/api/items', (req, res) => {
 
 // api/items/itemID
 app.get('/api/items/:id', (req,res) => {
+   
     const item = items.find(item => item.id === parseInt(req.params.id));
     
     if (!item) {
-        res.status(404).send('The item with the given ID was not found');
+        return res.status(404).send('The item with the given ID was not found');
+       
     }
     res.send(item);
 
@@ -38,8 +40,8 @@ app.post('/api/items', (req,res) => {
  
     const { error } = validateItem(req.body);
     if(error) {
-        res.status(400).send(error.details[0].message);
-        return ;
+        return res.status(400).send(error.details[0].message);
+        
     }
 
     const item = {
@@ -54,16 +56,33 @@ app.post('/api/items', (req,res) => {
 // Handler for PUT REQUEST (Update)
 app.put('/api/items/:id', (req, res) => {
     const item = items.find(item => parseInt(req.params.id) ===  item.id);
-    if (!item) res.status(404).send('The item with the given ID was not found');
+    if (!item) {
+        return res.status(404).send('The item with the given ID was not found');
+       
+    } 
 
     const { error } = validateItem(req.body);
     if(error) {
-        res.status(400).send(error.details[0].message);
-        return ;
+        return res.status(400).send(error.details[0].message);
+       
     }
     item.name = req.body.name;
     res.send(item);
 })
+
+// Handler for DELETE REQUEST (Delete)
+app.delete('/api/items/:id', (req, res) => {
+    const item = items.find(item => parseInt(req.params.id) ===  item.id);
+    if (!item) {
+        return res.status(404).send('The item with the given ID was not found');
+       
+    }
+    const index = items.indexOf(item);
+    items.splice(index, 1);
+
+    res.send(item);
+})
+
 
 const port = process.env.PORT || 3000;
 app.listen(3000, ()=> {
