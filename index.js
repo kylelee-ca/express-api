@@ -1,5 +1,8 @@
 const express = require('express');
+const Joi = require('joi');
+
 const app = express();
+app.use(express.json()); // Piece of middleware to parse request body 
 
 
 // Hardcode items for now 
@@ -10,11 +13,12 @@ const items = [
     {id:3, name: 'item3'},
 ];
 
+// Handlers for GET REQUESTS
 app.get('/', (req,res) => {
     res.send('This is the root of the website.');
 });
 app.get('/api/items', (req, res) => {
-    res.send([1, 2, 3]);
+    res.send(items);
 });
 
 // api/items/itemID
@@ -27,6 +31,28 @@ app.get('/api/items/:id', (req,res) => {
     res.send(item);
 
 });
+
+// Handlers for POST REQUEST
+
+app.post('/api/items', (req,res) => {
+    const schema = {
+        name: Joi.string().min(3).required(),
+    };
+    const result = Joi.validate(req.body, schema);
+    if(result.error) {
+        res.status(400).send(result.error.details[0].message);
+        return ;
+    }
+
+    const item = {
+        id: items.length + 1,
+        name: req.body.name,
+    };
+    items.push(item);
+
+    res.send(item);
+});
+
 
 const port = process.env.PORT || 3000;
 app.listen(3000, ()=> {
