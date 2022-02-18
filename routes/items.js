@@ -1,23 +1,25 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+const Joi = require('joi');
+const Item = mongoose.model('Item', new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        minlength: 5,
+        maxLength: 50,
+    }
+}));
 
-// Hardcode items for now 
-// To be replaced with the real items from DB
-const items = [
-    {id:1, name: 'item1'},
-    {id:2, name: 'item2'},
-    {id:3, name: 'item3'},
-];
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+    const items =  await Item.find().sort('name');
     res.send(items);
 });
 
 // api/items/itemID
-router.get('/:id', (req,res) => {
-   
-    const item = items.find(item => item.id === parseInt(req.params.id));
-    
+router.get('/:id', async (req,res) => {
+    const item = await Item.findById(req.params.id);
     if (!item) {
         return res.status(404).send('The item with the given ID was not found');
        
@@ -28,50 +30,43 @@ router.get('/:id', (req,res) => {
 
 // Handler for POST REQUEST (Create)
 
-router.post('/', (req,res) => {
+router.post('/', async (req,res) => {
  
     const { error } = validateItem(req.body);
-    if(error) {
-        return res.status(400).send(error.details[0].message);
-        
-    }
+    if(error)  return res.status(400).send(error.details[0].message);
 
-    const item = {
-        id: items.length + 1,
-        name: req.body.name,
-    };
-    items.push(item);
+
+    let item = new Item({
+        name: req.body.name
+    })
+    item = await item.save();
 
     res.send(item);
 });
 
 // Handler for PUT REQUEST (Update)
-router.put('/:id', (req, res) => {
-    const item = items.find(item => parseInt(req.params.id) ===  item.id);
-    if (!item) {
-        return res.status(404).send('The item with the given ID was not found');
-       
-    } 
-
+router.put('/:id', async (req, res) => {
     const { error } = validateItem(req.body);
     if(error) {
         return res.status(400).send(error.details[0].message);
        
     }
-    item.name = req.body.name;
+    const item = await Item.findByIdAndUpdate(req.params.id, {
+        name: req.body.name,
+        new: true
+    });
+    if (!item) {
+        return res.status(404).send('The item with the given ID was not found');
+    } 
     res.send(item);
 })
 
 // Handler for DELETE REQUEST (Delete)
-router.delete('/:id', (req, res) => {
-    const item = items.find(item => parseInt(req.params.id) ===  item.id);
+router.delete('/:id', async (req, res) => {
+    const item  = await Item.findByIdAndRemove(req.params.id);
     if (!item) {
         return res.status(404).send('The item with the given ID was not found');
-       
     }
-    const index = items.indexOf(item);
-    items.splice(index, 1);
-
     res.send(item);
 })
 //input validation function
